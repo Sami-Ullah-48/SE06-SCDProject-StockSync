@@ -1,5 +1,4 @@
 -- Initialize the database instance
-CREATE DATABASE IF NOT EXISTS stock_sync_db;
 USE stock_sync_db;
 
 -- 1. Create Suppliers Table
