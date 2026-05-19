@@ -1,11 +1,13 @@
 package com.stocksync.inventory.Model;
 
     
-    public abstract class Product {
+    public class Product {
     public int id;
     public String name;
+    public String category; // Grocery, Stationary, Cutlery, etc.
     public double price;
     public int quantity;
+    public String description;
+    public String supplier;
 
-    public abstract double calculateStockValue();
 }

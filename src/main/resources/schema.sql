@@ -15,17 +15,15 @@ CREATE TABLE IF NOT EXISTS categories (
 );
 
 -- 3. Create Polymorphic Products Table (Supports Abstract/Inheritance mapping)
+DROP TABLE IF EXISTS products;
+
 CREATE TABLE IF NOT EXISTS products (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    product_type VARCHAR(30) NOT NULL, -- Discriminator field: 'PERISHABLE' or 'DURABLE'
-    name VARCHAR(100) NOT NULL,
+    id INT AUTO_INCREMENT PRIMARY KEY, 
+    name VARCHAR(100) NOT NULL UNIQUE,
+    category VARCHAR(100) NOT NULL,
     price DOUBLE NOT NULL,
     quantity INT NOT NULL DEFAULT 0,
-    expiry_date DATE DEFAULT NULL,     -- Nullable attribute for Perishable instances
-    warranty_months INT DEFAULT NULL,  -- Nullable attribute for Durable instances
-    category_id INT,
     supplier_id INT,
-    FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE SET NULL,
     FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id) ON DELETE SET NULL
 );
 
