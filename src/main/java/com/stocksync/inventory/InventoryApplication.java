@@ -1,8 +1,7 @@
 package com.stocksync.inventory;
 
 import com.stocksync.inventory.Model.*;
-import com.stocksync.inventory.Serivce.ProductService;
-
+import com.stocksync.inventory.Service.ProductService;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -47,13 +46,13 @@ public class InventoryApplication implements CommandLineRunner {
             switch(choice) {
                 case 1:
                     Product p = new Product();
-                    System.out.print("Enter product name: "); p.name = scanner.nextLine();
-                    System.out.print("Enter category (Grocery, Stationary, Cutlery, etc): "); p.category = scanner.nextLine();
-                    System.out.print("Enter price: "); p.price = scanner.nextDouble();
-                    System.out.print("Enter initial stock quantity: "); p.quantity = scanner.nextInt();
+                    System.out.print("Enter product name: "); p.setName(scanner.nextLine());
+                    System.out.print("Enter category (Grocery, Stationary, Cutlery, etc): "); p.setCategory(scanner.nextLine());
+                    System.out.print("Enter price: "); p.setPrice(scanner.nextDouble());
+                    System.out.print("Enter initial stock quantity: "); p.setQuantity(scanner.nextInt());
                     scanner.nextLine(); // Clear buffer
-                    System.out.print("Enter product short description: "); p.description = scanner.nextLine();
-                    System.out.print("Enter supplier vendor name: "); p.supplier = scanner.nextLine();
+                    System.out.print("Enter product short description: "); p.setDescription(scanner.nextLine());
+                    System.out.print("Enter supplier vendor name: "); p.setSupplier(scanner.nextLine());
                     
                     productService.addProductToInventory(p);
                     break;

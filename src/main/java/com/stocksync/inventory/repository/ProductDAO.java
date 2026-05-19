@@ -12,19 +12,19 @@ public class ProductDAO {
         try (Connection conn = DriverManager.getConnection(url, user, password);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
-            stmt.setString(1, product.name);
-            stmt.setString(2, product.category);
-            stmt.setDouble(3, product.price);
-            stmt.setInt(4, product.quantity);
-            stmt.setString(5, product.description);
-            stmt.setString(6, product.supplier);
+            stmt.setString(1, product.getName());
+            stmt.setString(2, product.getCategory());
+            stmt.setDouble(3, product.getPrice());
+            stmt.setInt(4, product.getQuantity());
+            stmt.setString(5, product.getDescription());
+            stmt.setString(6, product.getSupplier());
             
             stmt.executeUpdate();
             System.out.println("Product saved successfully directly to MySQL database tables!");
             return true;
         } catch (SQLException e) {
             if (e.getErrorCode() == 1062) { // 1062 is the MySQL error code for Duplicate Entry
-                System.out.println("DATABASE REJECTION: A product with the name '" + product.name + "' already exists!");
+                System.out.println("DATABASE REJECTION: A product with the name '" + product.getName() + "' already exists!");
             } else {
                 e.printStackTrace();
             }
