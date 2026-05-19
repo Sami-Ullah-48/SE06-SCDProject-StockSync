@@ -2,6 +2,7 @@ package com.stocksync.inventory;
 
 import com.stocksync.inventory.Model.*;
 import com.stocksync.inventory.Service.ProductService;
+import com.stocksync.inventory.Repository.ProductDAO;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -20,6 +21,7 @@ public class InventoryApplication implements CommandLineRunner {
  @Override
     public void run(String... args) throws Exception {
         ProductService productService = new ProductService();
+        ProductDAO productDAO = new ProductDAO();
         Scanner scanner = new Scanner(System.in);
         
         System.out.println("=== Welcome to Stock-Sync Engine ===");
@@ -58,30 +60,30 @@ public class InventoryApplication implements CommandLineRunner {
                     break;
                     
                 case 2:
-                    productService.displayInventory();
+                    productDAO.printAllProducts();
                     break;
                     
                 case 3:
                     System.out.print("Enter Product ID to add volume to: "); int addId = scanner.nextInt();
                     System.out.print("Enter quantity to add (+): "); int addVol = scanner.nextInt();
-                    productService.addStockVolume(addId, addVol);
+                    productService.adjustStockVolume(addId, addVol);
                     break;
                     
                 case 4:
                     System.out.print("Enter Product ID to subtract volume from: "); int subId = scanner.nextInt();
                     System.out.print("Enter quantity to subtract (-): "); int subVol = scanner.nextInt();
-                    productService.subtractStockVolume(subId, subVol);
+                    productService.adjustStockVolume(subId, -subVol);
                     break;
                     
                 case 5:
                     System.out.print("Enter Product ID to explicitly overwrite: "); int updateId = scanner.nextInt();
                     System.out.print("Enter new total stock count value: "); int explicitQty = scanner.nextInt();
-                    productService.updateStockRaw(updateId, explicitQty);
+                    productDAO.updateProductQuantity(updateId, explicitQty);
                     break;
                     
                 case 6:
                     System.out.print("Enter Product ID to drop from database: "); int deleteId = scanner.nextInt();
-                    productService.removeProduct(deleteId);
+                    productDAO.deleteProduct(deleteId);
                     break;
                     
                 default:
