@@ -1,37 +1,34 @@
 package com.stocksync.inventory.Service;
 
 import com.stocksync.inventory.Model.Product;
+import com.stocksync.inventory.exception.InvalidProductException;
+import com.stocksync.inventory.exception.InsufficientStockException;
 import com.stocksync.inventory.Repository.ProductDAO;
-
 public class ProductService {
     private ProductDAO productDAO = new ProductDAO();
 
-    public void addProductToInventory(Product product) {
+    public void addProductToInventory(Product product) throws InvalidProductException {
         if (product.getName() == null || product.getName().trim().isEmpty()) {
-            System.out.println("VALIDATION ERROR: Product name cannot be blank!");
-            return;
+            throw new InvalidProductException("Product name cannot be blank or empty.");
         }
         if (product.getPrice() <= 0) {
-            System.out.println("VALIDATION ERROR: Price must be positive!");
-            return;
+            throw new InvalidProductException("Product price must be greater than zero.");
         }
         if (product.getQuantity() < 0) {
-            System.out.println("VALIDATION ERROR: Stock count cannot be negative!");
-            return;
+            throw new InvalidProductException("Initial stock quantity cannot be negative.");
         }
         productDAO.saveProduct(product);
     }
-    public void adjustStockVolume(int id, int amountModifier) {
+
+    public void adjustStockVolume(int id, int amountModifier) throws InvalidProductException, InsufficientStockException {
         int currentQty = productDAO.getCurrentQuantity(id);
         if (currentQty == -1) {
-            System.out.println("SERVICE ERROR: Product record does not exist.");
-            return;
+            throw new InvalidProductException("Product profile ID " + id + " does not exist in inventory.");
         }
 
         int targetQty = currentQty + amountModifier;
         if (targetQty < 0) {
-            System.out.println("VALIDATION ERROR: Insufficient stock inventory! Action aborted.");
-            return;
+            throw new InsufficientStockException("Operation rejected! Stock cannot drop below 0 units. Current stock: " + currentQty);
         }
 
         productDAO.updateProductQuantity(id, targetQty);

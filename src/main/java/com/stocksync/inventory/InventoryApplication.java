@@ -2,6 +2,8 @@ package com.stocksync.inventory;
 
 import com.stocksync.inventory.Model.*;
 import com.stocksync.inventory.Service.ProductService;
+import com.stocksync.inventory.exception.InsufficientStockException;
+import com.stocksync.inventory.exception.InvalidProductException;
 import com.stocksync.inventory.Repository.ProductDAO;
 
 import org.springframework.boot.CommandLineRunner;
@@ -44,12 +46,12 @@ public class InventoryApplication implements CommandLineRunner {
                 System.out.println("Shutting down inventory console engine. Goodbye!");
                 break;
             }
-            
-            switch(choice) {
-                case 1:
-                    Product p = new Product();
-                    System.out.print("Enter product name: "); p.setName(scanner.nextLine());
-                    System.out.print("Enter category (Grocery, Stationary, Cutlery, etc): "); p.setCategory(scanner.nextLine());
+            try {
+                switch(choice) {
+                    case 1:
+                        Product p = new Product();
+                        System.out.print("Enter product name: "); p.setName(scanner.nextLine());
+                        System.out.print("Enter category (Grocery, Stationary, Cutlery, etc): "); p.setCategory(scanner.nextLine());
                     System.out.print("Enter price: "); p.setPrice(scanner.nextDouble());
                     System.out.print("Enter initial stock quantity: "); p.setQuantity(scanner.nextInt());
                     scanner.nextLine(); // Clear buffer
@@ -89,7 +91,17 @@ public class InventoryApplication implements CommandLineRunner {
                 default:
                     System.out.println("Invalid option index selected.");
             }
+        }catch(InvalidProductException | InsufficientStockException e){
+            System.out.println("\\n[APPLICATION NOTICE] ->" + e.getMessage()); 
+        }catch (Exception e) {
+                // Catch-all safety guardrail for unexpected inputs (like typing letters into a number prompt)
+                System.out.println("\n[SYSTEM ERROR] An unexpected system failure occurred: " + e.getMessage());
+                scanner.nextLine(); // Reset buffer
+            }
+        finally{
+            System.out.println("\nReturning to main menu...");
+            scanner.close();
         }
-        scanner.close();
     } 
+}
 }
