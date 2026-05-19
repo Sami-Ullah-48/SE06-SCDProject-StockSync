@@ -1,79 +1,49 @@
 package com.stocksync.inventory.Service;
 
+import org.springframework.stereotype.Service;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import com.stocksync.inventory.Model.Product;
 import com.stocksync.inventory.exception.InvalidProductException;
 import com.stocksync.inventory.exception.InsufficientStockException;
-import com.stocksync.inventory.Repository.ProductDAO;
+import com.stocksync.inventory.Repository.ProductRepository;
+
+@Service
 public class ProductService {
-    private ProductDAO productDAO = new ProductDAO();
+    @Autowired
+    private ProductRepository productRepository;
 
     public void addProductToInventory(Product product) throws InvalidProductException {
         if (product.getName() == null || product.getName().trim().isEmpty()) {
-            throw new InvalidProductException("Product name cannot be blank or empty.");
+            throw new InvalidProductException("Product name cannot be blank.");
         }
         if (product.getPrice() <= 0) {
-            throw new InvalidProductException("Product price must be greater than zero.");
+            throw new InvalidProductException("Product price must be positive.");
         }
         if (product.getQuantity() < 0) {
             throw new InvalidProductException("Initial stock quantity cannot be negative.");
         }
-        productDAO.saveProduct(product);
+        
+        try {
+            productRepository.save(product); // Clean Spring Data JPA save!
+        } catch (Exception e) {
+            // Catches database level issues like duplicate unique constraint violations
+            throw new InvalidProductException("Rejection: A product with that name already exists!");
+        }
     }
 
     public void adjustStockVolume(int id, int amountModifier) throws InvalidProductException, InsufficientStockException {
-        int currentQty = productDAO.getCurrentQuantity(id);
-        if (currentQty == -1) {
-            throw new InvalidProductException("Product profile ID " + id + " does not exist in inventory.");
-        }
+        // Safe, clean optional lookup using Spring Data mechanisms
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new InvalidProductException("Product profile ID " + id + " does not exist."));
 
-        int targetQty = currentQty + amountModifier;
+        int targetQty = product.getQuantity() + amountModifier;
         if (targetQty < 0) {
-            throw new InsufficientStockException("Operation rejected! Stock cannot drop below 0 units. Current stock: " + currentQty);
+            throw new InsufficientStockException("Operation rejected! Stock cannot drop below 0 units. Current stock: " + product.getQuantity());
         }
 
-        productDAO.updateProductQuantity(id, targetQty);
+        product.setQuantity(targetQty);
+        productRepository.save(product); // Automatically updates the existing row record
     }
-    // public void displayInventory() {
-    //     productDAO.printAllProducts();
-    // }
-    // public void addStockVolume(int id, int amountToAdd) {
-    //     int currentQty = productDAO.getCurrentQuantity(id);
-    //     if (currentQty == -1) {
-    //         System.out.println("SERVICE ERROR: Product does not exist.");
-    //         return;
-    //     }
-    //     if (amountToAdd <= 0) {
-    //         System.out.println("VALIDATION ERROR: Addition volume must be greater than zero!");
-    //         return;
-    //     }
-    //     productDAO.updateProductQuantity(id, currentQty + amountToAdd);
-    // }
-    // public void subtractStockVolume(int id, int amountToSubtract) {
-    //     int currentQty = productDAO.getCurrentQuantity(id);
-    //     if (currentQty == -1) {
-    //         System.out.println("SERVICE ERROR: Product does not exist.");
-    //         return;
-    //     }
-    //     if (amountToSubtract <= 0) {
-    //         System.out.println("VALIDATION ERROR: Subtraction volume must be greater than zero!");
-    //         return;
-    //     }
-    //     if (currentQty - amountToSubtract < 0) {
-    //         System.out.println("VALIDATION ERROR: Insufficient stock inventory! Cannot subtract below 0.");
-    //         return;
-    //     }
-    //     productDAO.updateProductQuantity(id, currentQty - amountToSubtract);
-    // }
-    // public void updateStockRaw(int id, int explicitQty) {
-    //     if (explicitQty < 0) {
-    //         System.out.println("VALIDATION ERROR: Total stock level cannot be negative!");
-    //         return;
-    //     }
-    //     productDAO.updateProductQuantity(id, explicitQty);
-    // }
-
-    // public void removeProduct(int id) {
-    //     productDAO.deleteProduct(id);
-    // }
 
 }

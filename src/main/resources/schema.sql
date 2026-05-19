@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS categories (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL
 );
+Drop Table IF EXISTS inventory_log;
 
 -- 3. Create Polymorphic Products Table (Supports Abstract/Inheritance mapping)
 DROP TABLE IF EXISTS products;
@@ -28,6 +29,8 @@ CREATE TABLE IF NOT EXISTS products (
 );
 
 -- 4. Create Inventory Log Table for tracking changes
+
+
 CREATE TABLE IF NOT EXISTS inventory_log (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT,
@@ -35,7 +38,3 @@ CREATE TABLE IF NOT EXISTS inventory_log (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
-
--- Insert sample records to facilitate testing in upcoming steps
-INSERT INTO categories (name) VALUES ('Fresh Items'), ('Long-Term Goods');
-INSERT INTO suppliers (name, contact_phone) VALUES ('Gujrat Logistics', '+923001112223'), ('Gujranwala Importers', '+923214445556');
