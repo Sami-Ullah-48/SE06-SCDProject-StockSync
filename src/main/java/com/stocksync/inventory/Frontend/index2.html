@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock-Sync Engine Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background-color: #f4f6f9; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1, h2 { color: #2c3e50; margin-bottom: 10px; }
+        p { color: #7f8c8d; margin-top: 0; margin-bottom: 25px; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        
+        /* Form Layout */
+        .form-row { display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; }
+        .form-group { display: flex; flex-direction: column; }
+        label { margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #34495e; }
+        input { padding: 10px; width: 180px; border: 1px solid #ccd1d9; border-radius: 4px; font-size: 14px; }
+        input:focus { border-color: #3498db; outline: none; }
+        
+        /* Action Buttons */
+        button { padding: 11px 20px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; transition: background 0.2s; }
+        button:hover { background-color: #2980b9; }
+        .btn-refresh { background-color: #2ecc71; margin-bottom: 15px; }
+        .btn-refresh:hover { background-color: #27ae60; }
+        
+        /* Table Layout Fixes */
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; }
+        th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid #e6e9ed; font-size: 14px; }
+        th { background-color: #34495e; color: white; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
+        tr:hover { background-color: #f5f7fa; }
+        
+        /* Utility Badges and Inner Buttons */
+        .badge { background: #e8edf2; padding: 4px 8px; border-radius: 4px; font-weight: 600; color: #515d6e; }
+        .qty-text { font-weight: bold; display: inline-block; min-width: 70px; text-align: center;}
+        .action-cluster { display: flex; gap: 6px; align-items: center; }
+        
+        .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 3px; }
+        .btn-sell { background-color: #f39c12; }
+        .btn-sell:hover { background-color: #d35400; }
+        .btn-add { background-color: #3498db; }
+        .btn-add:hover { background-color: #2980b9; }
+        .btn-purge { background-color: #e74c3c; }
+        .btn-purge:hover { background-color: #c0392b; }
+        
+        .status-msg { margin-top: 15px; font-weight: bold; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📦 Stock-Sync Engine Dashboard</h1>
+    <p>Connected live storage nodes via REST channel</p>
+
+    <div class="card">
+        <h2>Add / Restock Profile</h2>
+        <form id="productForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Product Name</label>
+                    <input type="text" id="name" required placeholder="e.g., Chocolate">
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <input type="text" id="category" required placeholder="e.g., Sweets">
+                </div>
+                <div class="form-group">
+                    <label>Unit Price ($)</label>
+                    <input type="number" step="0.01" id="price" required placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label>Quantity</label>
+                    <input type="number" id="quantity" required placeholder="0">
+                </div>
+                <button type="submit">Submit Record</button>
+            </div>
+        </form>
+        <div id="statusMessage" class="status-msg"></div>
+    </div>
+
+    <div class="card">
+        <h2>Active Inventory Storage Levels</h2>
+        <button class="btn-refresh" onclick="fetchInventory()">🔄 Refresh Live Stock Records</button>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 8%;">ID</th>
+                    <th style="width: 25%;">Product Name (Truncated)</th>
+                    <th style="width: 18%;">Category</th>
+                    <th style="width: 14%;">Price</th>
+                    <th style="width: 15%; text-align: center;">Available Stock</th>
+                    <th style="width: 20%; text-align: right;">Quick Actions</th>
+                </tr>
+            </thead>
+            <tbody id="inventoryTableBody">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API_BASE_URL = "http://localhost:8080/api/products";
+
+    // 1. READ ALL RECORDS
+    async function fetchInventory() {
+        try {
+            const response = await fetch(API_BASE_URL);
+            if (!response.ok) throw new Error("API Connection broken");
+            const products = await response.json();
+            
+            const tableBody = document.getElementById("inventoryTableBody");
+            tableBody.innerHTML = ""; 
+
+            if (products.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#95a5a6; padding: 30px;">No inventory profiles available in MySQL storage.</td></tr>`;
+                return;
+            }
+
+            products.forEach(product => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td><span class="badge">#${product.id}</span></td>
+                    <td><strong>${product.name}</strong></td>
+                    <td>${product.category}</td>
+                    <td>$${product.price.toFixed(2)}</td>
+                    <td style="text-align: center;"><span class="qty-text">${product.quantity} units</span></td>
+                    <td>
+                        <div class="action-cluster" style="justify-content: flex-end;">
+                            <button class="btn-sm btn-add" onclick="modifyStock(${product.id}, 1)">➕ Add 1</button>
+                            <button class="btn-sm btn-sell" onclick="modifyStock(${product.id}, -1)">📉 Sell 1</button>
+                            <button class="btn-sm btn-purge" onclick="deleteProduct(${product.id})">Delete</button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        } catch (error) {
+            console.error("UI Render crash:", error);
+        }
+    }
+
+    // 2. CREATE AND DUPLICATE UPSERT MERGE
+    document.getElementById("productForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const payload = {
+            name: document.getElementById("name").value,
+            category: document.getElementById("category").value,
+            price: parseFloat(document.getElementById("price").value),
+            quantity: parseInt(document.getElementById("quantity").value)
+        };
+
+        try {
+            const response = await fetch(API_BASE_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const txt = await response.text();
+            
+            const statusMsg = document.getElementById("statusMessage");
+            statusMsg.innerText = txt;
+            statusMsg.style.color = response.status === 201 ? "#2ecc71" : "#3498db";
+
+            document.getElementById("productForm").reset();
+            fetchInventory();
+        } catch (err) {
+            alert("Connection error occurred.");
+        }
+    });
+
+    // 3. PATCH SALES & ADDITIONS MODIFIER (Using negative/positive values)
+    async function modifyStock(id, stepValue) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/${id}/stock?modifier=${stepValue}`, {
+                method: "PATCH"
+            });
+
+            if (!response.ok) {
+                const errorMsg = await response.text();
+                alert(`Operation Rejection: ${errorMsg}`);
+            } else {
+                fetchInventory(); // Instantly visually flash changes
+            }
+        } catch (error) {
+            alert("Backend communication loss.");
+        }
+    }
+
+    // 4. PURGE ENTIRE DATA RECORD
+    async function deleteProduct(id) {
+        if (!confirm("Are you sure you want to drop this profile out of storage memory?")) return;
+        try {
+            await fetch(`${API_BASE_URL}/${id}`, { method: "DELETE" });
+            fetchInventory();
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    window.onload = fetchInventory;
+</script>
+</body>
+</html>

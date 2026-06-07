@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock-Sync Engine Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background-color: #f4f6f9; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1, h2 { color: #2c3e50; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .form-group { margin-bottom: 15px; display: inline-block; margin-right: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; }
+        input, select { padding: 10px; width: 200px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 11px 20px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #2980b9; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eceff1; }
+        th { background-color: #34495e; color: white; }
+        tr:hover { background-color: #f8f9fa; }
+        .btn-delete { background-color: #e74c3c; padding: 6px 12px; font-size: 12px; }
+        .btn-delete:hover { background-color: #c0392b; }
+        .status-msg { margin-top: 15px; font-weight: bold; color: #27ae60; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📦 Stock-Sync Engine Dashboard</h1>
+    <p>Web Browser UI Interface Connected to: <code>http://localhost:8080/api/products</code></p>
+
+    <div class="card">
+        <h2>Add or Update Stock Profile</h2>
+        <form id="productForm">
+            <div class="form-group">
+                <label>Product Name (Max 20 Char)</label>
+                <input type="text" id="name" required placeholder="e.g., Gaming Mouse">
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <input type="text" id="category" required placeholder="e.g., Electronics">
+            </div>
+            <div class="form-group">
+                <label>Price ($)</label>
+                <input type="number" step="0.01" id="price" required placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label>Initial Quantity</label>
+                <input type="number" id="quantity" required placeholder="0">
+            </div>
+            <button type="submit">Submit to Inventory</button>
+        </form>
+        <div id="statusMessage" class="status-msg"></div>
+    </div>
+
+    <div class="card">
+        <h2>Active Inventory Storage Levels</h2>
+        <button onclick="fetchInventory()">🔄 Refresh Live Stock Records</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Product Name (Truncated)</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Available Stock</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="inventoryTableBody">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API_BASE_URL = "http://localhost:8080/api/products";
+
+    // 1. READ: Fetch all products from API and draw the table rows
+    async function fetchInventory() {
+        try {
+            const response = await fetch(API_BASE_URL);
+            if (!response.ok) throw new Error("Failed to reach API server.");
+            
+            const products = await response.json();
+            const tableBody = document.getElementById("inventoryTableBody");
+            tableBody.innerHTML = ""; // Clear old data rows
+
+            if(products.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#7f8c8d;">No records found in database inventory.</td></tr>`;
+                return;
+            }
+
+            products.forEach(product => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${product.id}</td>
+                    <strong><td>${product.name}</td></strong>
+                    <td>${product.category}</td>
+                    <td>$${product.price.toFixed(2)}</td>
+                    <td><strong>${product.quantity} units</strong></td>
+                    <td>
+                        <button class="btn-delete" onclick="deleteProduct(${product.id})">Purge</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        } catch (error) {
+            console.error("Error loading inventory:", error);
+            alert("Could not connect to the backend server. Make sure Spring Boot is running!");
+        }
+    }
+
+    // 2. CREATE / UPSERT: Intercept form submit and send data packet to API
+    document.getElementById("productForm").addEventListener("submit", async (e) => {
+        e.preventDefault(); // Stop standard browser page reload
+
+        const payload = {
+            name: document.getElementById("name").value,
+            category: document.getElementById("category").value,
+            price: parseFloat(document.getElementById("price").value),
+            quantity: parseInt(document.getElementById("quantity").value)
+        };
+
+        try {
+            const response = await fetch(API_BASE_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const txtResponse = await response.text();
+            const statusMsg = document.getElementById("statusMessage");
+            statusMsg.innerText = txtResponse;
+
+            // Flash visual status colors depending on action status
+            statusMsg.style.color = response.status === 201 ? "#27ae60" : "#2980b9";
+
+            document.getElementById("productForm").reset(); // Clear input elements
+            fetchInventory(); // Automatically update table view instantly!
+
+        } catch (error) {
+            console.error("Form error:", error);
+            alert("Error sending product payload.");
+        }
+    });
+
+    // 3. DELETE: Target profile ID and request purge
+    async function deleteProduct(id) {
+        if (!confirm(`Are you sure you want to permanently delete Product ID: ${id}?`)) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/${id}`, { method: "DELETE" });
+            const msg = await response.text();
+            alert(msg);
+            fetchInventory(); // Reload database snapshot view
+        } catch (error) {
+            console.error("Delete execution crashed:", error);
+        }
+    }
+
+    // Automatically poll and fetch current stock rows as soon as the page opens!
+    window.onload = fetchInventory;
+</script>
+
+</body>
+</html>

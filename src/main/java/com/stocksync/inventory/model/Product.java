@@ -1,4 +1,4 @@
-package com.stocksync.inventory.Model;
+package com.stocksync.inventory.model;
 
 import jakarta.persistence.*;
 
@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 
     public class Product {
         @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-incrementing ID
+    @GeneratedValue(strategy = GenerationType.IDENTITY) 
     private int id;
 
     @Column(nullable = false, unique = true) // Name must be unique and not null

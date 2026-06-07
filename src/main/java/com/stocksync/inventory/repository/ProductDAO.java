@@ -1,6 +1,7 @@
-package com.stocksync.inventory.Repository;
-import com.stocksync.inventory.Model.Product;
+package com.stocksync.inventory.repository;
 import java.sql.*;
+
+import com.stocksync.inventory.model.Product;
 
 public class ProductDAO {
     private String url = "jdbc:mysql://localhost:3306/stock_sync_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
@@ -23,7 +24,7 @@ public class ProductDAO {
             System.out.println("Product saved successfully directly to MySQL database tables!");
             return true;
         } catch (SQLException e) {
-            if (e.getErrorCode() == 1062) { // 1062 is the MySQL error code for Duplicate Entry
+            if (e.getErrorCode() == 1062) { 
                 System.out.println("DATABASE REJECTION: A product with the name '" + product.getName() + "' already exists!");
             } else {
                 e.printStackTrace();
@@ -99,6 +100,6 @@ public class ProductDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return -1; // Product not found code flag
+        return -1;
     }
 }
